@@ -15,17 +15,19 @@
 pip install -e .
 export THE_ODDS_API_KEY="your_key"
 export ODDS_DRIFT_DB="/tmp/drift.db"
-# optional: protect HTTP API
-# export ODDS_DRIFT_SERVICE_TOKEN="long-random"
+# Required for the watch and tick HTTP endpoints
+export ODDS_DRIFT_SERVICE_TOKEN="your-service-token"
 
 uvicorn odds_drift_watch.app:APP --reload --port 8766
 ```
 
 - `POST /watches` — register a watch (see OpenAPI at `/docs`).
 - `POST /tick` — run one poll cycle (hook **GitHub Actions**, **Railway cron**, or **Uptime Kuma** to hit this every N minutes).
-- `odds-drift-watch tick --db ./odgs.db` — same poll from cron without HTTP.
+- `odds-drift-watch tick --db ./odds_drift.db` — same poll from cron without HTTP.
 
-**Auth:** If `ODDS_DRIFT_SERVICE_TOKEN` is set, pass `Authorization: Bearer <token>` on mutating routes and `/tick`.
+Send `Authorization: Bearer <token>` on every watch and tick request. The health endpoint stays public. The CLI reads the odds API key directly.
+
+Each tick shares a feed snapshot among watches for the same sport, region, and market set. An unsuccessful webhook response increments `errors` and keeps the previous quote so a later tick can retry. Schedule one tick at a time to avoid overlapping deliveries.
 
 ---
 

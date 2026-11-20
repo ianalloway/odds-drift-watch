@@ -10,9 +10,9 @@ from odds_drift_watch.app import APP
 def client(tmp_path, monkeypatch):
     db = tmp_path / "api.db"
     monkeypatch.setenv("ODDS_DRIFT_DB", str(db))
-    monkeypatch.delenv("ODDS_DRIFT_SERVICE_TOKEN", raising=False)
+    monkeypatch.setenv("ODDS_DRIFT_SERVICE_TOKEN", "test-service")
     monkeypatch.setenv("THE_ODDS_API_KEY", "test-key")
-    with TestClient(APP) as c:
+    with TestClient(APP, headers={"Authorization": "Bearer test-service"}) as c:
         yield c
 
 
@@ -49,3 +49,8 @@ def test_service_token_enforced(client, monkeypatch):
     assert r.status_code == 401
     r2 = client.get("/watches", headers={"Authorization": "Bearer secret"})
     assert r2.status_code == 200
+
+def test_missing_server_token_keeps_health_available(client, monkeypatch):
+    monkeypatch.delenv("ODDS_DRIFT_SERVICE_TOKEN")
+    assert client.get("/health").status_code == 200
+    assert client.get("/watches").status_code == 503

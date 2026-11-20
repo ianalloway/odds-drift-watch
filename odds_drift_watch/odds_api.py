@@ -30,7 +30,7 @@ def fetch_event_odds(
         r.raise_for_status()
         data = r.json()
     if not isinstance(data, list):
-        raise ValueError("unexpected API response shape")
+        raise ValueError("unexpected API response shape")  # noqa: TRY004 - invalid upstream data
     return data
 
 
