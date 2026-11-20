@@ -6,12 +6,21 @@ import os
 from contextlib import asynccontextmanager
 from dataclasses import asdict
 from pathlib import Path
+from secrets import compare_digest
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from odds_drift_watch.engine import run_tick
-from odds_drift_watch.store import connect, delete_watch, init_db, insert_watch, list_watches, row_to_watch
+from odds_drift_watch.store import (
+    connect,
+    delete_watch,
+    init_db,
+    insert_watch,
+    list_watches,
+    row_to_watch,
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -41,8 +50,8 @@ def get_api_key_odds() -> str:
 def verify_service_token(authorization: str | None = Header(None)) -> None:
     expected = os.environ.get("ODDS_DRIFT_SERVICE_TOKEN", "")
     if not expected:
-        return
-    if authorization != f"Bearer {expected}":
+        raise HTTPException(503, "service token not configured")
+    if not compare_digest((authorization or "").encode(), f"Bearer {expected}".encode()):
         raise HTTPException(401, "invalid or missing service token")
 
 

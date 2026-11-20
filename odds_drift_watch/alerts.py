@@ -16,6 +16,7 @@ def send_webhook(url: str, payload: dict[str, Any], timeout: float = 15.0) -> in
             content=json.dumps(payload),
             headers={"Content-Type": "application/json"},
         )
+        r.raise_for_status()
         return r.status_code
 
 
